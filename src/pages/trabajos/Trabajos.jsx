@@ -146,9 +146,25 @@ const Trabajos = () => {
     setEditingId(trabajo._id);
     const edificioEncontrado = edificios.find(e => e.nombreEdificio === trabajo.edificio);
     setEdificioSeleccionado(edificioEncontrado);
+    
+    // Asegurarse de que la fecha sea válida antes de formatearla
+    let fechaFormateada;
+    try {
+      const fecha = new Date(trabajo.fecha);
+      if (isNaN(fecha.getTime())) {
+        // Si la fecha es inválida, usar la fecha actual
+        fechaFormateada = format(new Date(), 'yyyy-MM-dd');
+      } else {
+        fechaFormateada = format(fecha, 'yyyy-MM-dd');
+      }
+    } catch (error) {
+      console.error('Error al formatear fecha:', error);
+      fechaFormateada = format(new Date(), 'yyyy-MM-dd');
+    }
+
     setFormData({
       ...trabajo,
-      fecha: format(new Date(trabajo.fecha), 'yyyy-MM-dd')
+      fecha: fechaFormateada
     });
   };
 
@@ -167,14 +183,31 @@ const Trabajos = () => {
   const handleFacturadoChange = async (id, field) => {
     try {
       const trabajo = trabajos.find(t => t._id === id);
-      await axios.put(`/api/trabajos/${id}`, {
-        ...trabajo,
-        [field]: !trabajo[field]
+      if (!trabajo) {
+        console.error('Trabajo no encontrado:', id);
+        return;
+      }
+
+      console.log('Actualizando trabajo:', {
+        id,
+        field,
+        valorActual: trabajo[field],
+        nuevoValor: !trabajo[field]
       });
-      fetchTrabajos();
+
+      // Solo enviar el campo que se está actualizando
+      const datosActualizados = {
+        [field]: !trabajo[field]
+      };
+      
+      await axios.patch(`/api/trabajos/${id}`, datosActualizados);
+      console.log('Trabajo actualizado exitosamente');
+      
+      // Recargar los trabajos
+      await fetchTrabajos(1, sortOrder, filtroEdificio, filtroFacturaHecha);
     } catch (err) {
+      console.error('Error al actualizar el estado:', err);
       setError('Error al actualizar el estado');
-      console.error('Error:', err);
     }
   };
 
