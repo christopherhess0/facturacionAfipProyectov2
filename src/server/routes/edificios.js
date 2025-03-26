@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { google } = require('googleapis');
 const path = require('path');
-const Edificio = require('../models/edificio');
+const Edificio = require('../models/Edificio');
 
 // Configuración de Google Sheets
 const getAuth = async () => {
@@ -104,13 +104,13 @@ router.post('/importar', async (req, res) => {
 // Ruta para obtener todos los edificios
 router.get('/', async (req, res) => {
   try {
-    const edificios = await Edificio.find({}).sort({ direccion: 1 });
+    console.log('Solicitando lista de edificios');
+    const edificios = await Edificio.find().lean();
+    console.log(`Encontrados ${edificios.length} edificios`);
     res.json(edificios);
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Error al obtener edificios', 
-      error: error.message 
-    });
+    console.error('Error al obtener edificios:', error);
+    res.status(500).json({ error: 'Error al obtener la lista de edificios' });
   }
 });
 

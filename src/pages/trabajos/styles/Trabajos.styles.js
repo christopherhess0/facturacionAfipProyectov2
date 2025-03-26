@@ -2,13 +2,15 @@ import styled from 'styled-components';
 
 export const Container = styled.div`
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 `;
 
 export const Title = styled.h1`
-  color: #2c3e50;
-  text-align: center;
+  color: #1a237e;
+  font-size: 1.8rem;
+  font-weight: 600;
+  text-align: left;
   margin-bottom: 30px;
 `;
 
@@ -50,31 +52,78 @@ export const Button = styled.button`
 
 export const Table = styled.table`
   width: 100%;
-  border-collapse: collapse;
-  background: white;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #f8fafc;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
 `;
 
 export const TableRow = styled.tr`
+  background-color: #f8fafc;
+  
+  &:hover {
+    background-color: #f1f5f9;
+  }
+
   &:nth-child(even) {
-    background-color: #f8f9fa;
+    background-color: #f1f5f9;
+  }
+
+  &:last-child td {
+    border-bottom: none;
   }
 `;
 
 export const TableCell = styled.td`
-  padding: 12px;
-  border-bottom: 1px solid #ddd;
-  font-size: 14px;
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+  color: #1e293b;
+  font-weight: 400;
+  letter-spacing: 0.01071em;
+  line-height: 1.43;
+  
+  &:first-child {
+    font-weight: 500;
+  }
 `;
 
 export const TableHeader = styled.th`
-  background-color: #34495e;
-  color: white;
-  padding: 12px;
+  padding: 16px;
   text-align: left;
+  background-color: #2C5282;
+  color: white;
   font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.01071em;
+  line-height: 1.5rem;
+  border-bottom: none;
+  
+  &.sortable {
+    cursor: pointer;
+    user-select: none;
+    
+    &:hover {
+      background-color: #2d3748;
+    }
+    
+    .sort-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  &:first-child {
+    border-top-left-radius: 8px;
+  }
+
+  &:last-child {
+    border-top-right-radius: 8px;
+  }
 `;
 
 export const ActionButtons = styled.div`
@@ -90,6 +139,7 @@ export const ActionButton = styled.button`
   font-size: 16px;
   padding: 5px;
   transition: transform 0.2s;
+  color: #2C5282;
 
   &:hover {
     transform: scale(1.2);
@@ -118,19 +168,30 @@ export const AutocompleteContainer = styled.div`
 `;
 
 export const Select = styled.select`
-  padding: 5px 10px;
+  padding: 8px 12px;
   border-radius: 4px;
-  border: 1px solid #ddd;
-  font-size: 14px;
+  border: none;
+  font-size: 0.875rem;
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   cursor: pointer;
   outline: none;
+  color: white;
+  font-weight: 500;
+  width: 80px;
+  text-align: center;
+  appearance: none;
+  background-color: ${props => props.value === "SI" ? '#4CAF50' : '#f44336'};
+  transition: background-color 0.3s ease;
+  letter-spacing: 0.01071em;
 
-  &:focus {
-    border-color: #3498db;
+  &:hover {
+    opacity: 0.9;
   }
 
   option {
-    padding: 5px;
+    background-color: white;
+    color: #424242;
+    font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   }
 `;
 
@@ -182,4 +243,12 @@ export const ExcelHeader = styled(ExcelCell)`
   top: 0;
   z-index: 1;
   border-bottom: 2px solid #dee2e6;
+`;
+
+export const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  width: 100%;
 `; 
