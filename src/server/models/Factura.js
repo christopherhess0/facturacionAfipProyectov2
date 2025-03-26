@@ -1,51 +1,40 @@
 const mongoose = require('mongoose');
 
 const facturaSchema = new mongoose.Schema({
-    cliente: {
+    trabajo: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Cliente',
+        ref: 'Trabajo',
         required: true
     },
-    numeroComprobante: {
+    numeroFactura: {
         type: Number,
         required: true
     },
-    tipoComprobante: {
-        type: Number,
-        required: true,
-        default: 6 // Factura B por defecto
+    cae: {
+        type: String,
+        required: true
     },
-    puntoVenta: {
-        type: Number,
-        required: true,
-        default: 1
-    },
-    fecha: {
+    fechaEmision: {
         type: Date,
-        required: true,
         default: Date.now
     },
-    items: [{
-        descripcion: {
-            type: String,
-            required: true
-        },
-        cantidad: {
-            type: Number,
-            required: true
-        },
-        precio: {
-            type: Number,
-            required: true
-        }
-    }],
-    total: {
-        type: Number,
+    usuarioFacturador: {
+        type: String,
+        enum: ['christopher', 'nicole', 'german'],
         required: true
     },
-    cae: String,
-    vencimientoCae: Date,
-    observaciones: String
+    pdfPath: {
+        type: String,
+        required: true
+    },
+    estado: {
+        type: String,
+        enum: ['pendiente', 'generada', 'error'],
+        default: 'pendiente'
+    },
+    error: {
+        type: String
+    }
 }, {
     timestamps: true
 });

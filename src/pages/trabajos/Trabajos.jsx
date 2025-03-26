@@ -1,8 +1,8 @@
 import SyncIcon from '@mui/icons-material/Sync';
 import {
-    Box,
-    IconButton,
-    Tooltip
+  Box,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import { format } from 'date-fns';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -14,21 +14,21 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import TipoDestapacionAutocomplete from '../../components/TipoDestapacionAutocomplete';
 import axios from '../../config/axios';
 import {
-    ActionButton,
-    ActionButtons,
-    AutocompleteContainer,
-    Button,
-    Container,
-    FilterLabel,
-    FilterSection,
-    Form,
-    Input,
-    Select,
-    Table,
-    TableCell,
-    TableHeader,
-    TableRow,
-    Title
+  ActionButton,
+  ActionButtons,
+  AutocompleteContainer,
+  Button,
+  Container,
+  FilterLabel,
+  FilterSection,
+  Form,
+  Input,
+  Select,
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
+  Title
 } from './styles/Trabajos.styles';
 
 const StyledTableHeader = styled.th`
