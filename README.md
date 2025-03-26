@@ -1,70 +1,87 @@
-# Getting Started with Create React App
+# Sistema de Facturación AFIP
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Sistema de facturación electrónica integrado con AFIP para la gestión de comprobantes fiscales.
 
-## Available Scripts
+## Características
 
-In the project directory, you can run:
+- Integración con AFIP para facturación electrónica
+- Gestión de trabajos y edificios
+- Exportación a Excel y Google Sheets
+- Sistema de autenticación y autorización
+- Interfaz moderna y responsive
 
-### `npm start`
+## Requisitos
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Node.js >= 14
+- MongoDB
+- Certificados de AFIP (homologación o producción)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Configuración
 
-### `npm test`
+1. Clonar el repositorio
+```bash
+git clone [URL_DEL_REPOSITORIO]
+cd facturacion-afip.v2
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. Instalar dependencias
+```bash
+npm install
+```
 
-### `npm run build`
+3. Configurar variables de entorno
+Crear un archivo `.env` con las siguientes variables:
+```
+MONGODB_URI=tu_uri_de_mongodb
+GOOGLE_SHEET_ID=tu_id_de_google_sheets
+AFIP_CUIT=tu_cuit
+NODE_ENV=development
+PORT=3001
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+4. Configurar certificados AFIP
+- Crear directorio `certificates/`
+- Colocar los archivos `cert.pem` y `key.pem` en el directorio
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Estructura de Directorios
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```
+├── src/
+│   ├── client/          # Frontend React
+│   └── server/          # Backend Node.js
+│       ├── config/      # Configuraciones
+│       ├── routes/      # Rutas API
+│       └── services/    # Servicios
+├── certificates/        # Certificados AFIP (ignorado en git)
+└── pdfs/               # PDFs generados (ignorado en git)
+```
 
-### `npm run eject`
+## Desarrollo
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+# Iniciar en modo desarrollo
+npm run dev
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+# Frontend: http://localhost:3000
+# Backend: http://localhost:3001
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Producción
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+# Construir para producción
+npm run build
 
-## Learn More
+# Iniciar en producción
+npm start
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Seguridad
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Los certificados y claves privadas de AFIP deben mantenerse seguros
+- No compartir el archivo `.env`
+- Las credenciales están excluidas del control de versiones
 
-### Code Splitting
+## Licencia
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Este proyecto es privado y confidencial.
