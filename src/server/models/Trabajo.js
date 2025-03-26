@@ -1,44 +1,66 @@
 const mongoose = require('mongoose');
 
 const trabajoSchema = new mongoose.Schema({
-    fecha: {
-        type: Date,
+    edificio: {
+        type: String,
         required: true,
-        default: Date.now
+        trim: true
     },
-    cuitCliente: {
+    cuit: {
         type: String,
-        required: true
+        trim: true,
+        default: ''
     },
-    tipoTrabajo: {
+    tipoDestapacion: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
-    ubicacion: {
-        departamento: String,
-        piso: String
+    piso: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    fecha: {
+        type: String,
+        required: true,
+        trim: true
     },
     importe: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
-    administracion: {
-        nombre: {
-            type: String,
-            required: true
-        },
-        contacto: String
+    seFactura: {
+        type: Boolean,
+        default: true // Siempre true ya que solo guardamos los que se facturan
     },
-    facturado: {
+    facturaHecha: {
         type: Boolean,
         default: false
     },
-    facturaId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Factura'
+    pagado: {
+        type: Boolean,
+        default: false
+    },
+    administrador: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    nombreContacto: {
+        type: String,
+        trim: true,
+        default: ''
     }
 }, {
     timestamps: true
+});
+
+// Middleware para actualizar updatedAt
+trabajoSchema.pre('save', function(next) {
+    this.updatedAt = new Date();
+    next();
 });
 
 module.exports = mongoose.model('Trabajo', trabajoSchema); 

@@ -1,51 +1,29 @@
 import { Autocomplete, TextField } from '@mui/material';
 import React from 'react';
-import styled from 'styled-components';
 
-const StyledAutocomplete = styled(Autocomplete)`
-  .MuiOutlinedInput-root {
-    background-color: white;
-    border-radius: 6px;
-    font-size: 1rem;
-    
-    &:hover .MuiOutlinedInput-notchedOutline {
-      border-color: #3498db;
-    }
-    
-    &.Mui-focused .MuiOutlinedInput-notchedOutline {
-      border-color: #3498db;
-    }
-  }
-
-  .MuiAutocomplete-input {
-    padding: 0.8rem !important;
-  }
-`;
-
-const EdificioAutocomplete = ({ edificios = [], value, onChange }) => {
+const EdificioAutocomplete = ({ edificios, value, onChange, placeholder = "Seleccione un edificio", style, isFilter = false }) => {
   return (
-    <StyledAutocomplete
+    <Autocomplete
       options={edificios}
-      getOptionLabel={(option) => {
-        if (!option) return '';
-        return option.direccion || '';
-      }}
-      value={value || null}
+      value={value}
       onChange={(event, newValue) => {
         onChange(newValue);
       }}
+      getOptionLabel={(option) => option ? option.nombreEdificio || option.direccion || '' : ''}
       renderInput={(params) => (
         <TextField
           {...params}
-          placeholder="Buscar edificio..."
+          placeholder={placeholder}
           variant="outlined"
+          fullWidth
+          style={style}
         />
       )}
       isOptionEqualToValue={(option, value) => {
         if (!option || !value) return false;
         return option._id === value._id;
       }}
-      noOptionsText="No se encontraron edificios"
+      style={{ width: '100%' }}
     />
   );
 };

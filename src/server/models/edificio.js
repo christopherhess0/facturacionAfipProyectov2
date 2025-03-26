@@ -4,18 +4,22 @@ const edificioSchema = new mongoose.Schema({
   direccion: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true
   },
   cuit: {
     type: String,
-    required: true
+    trim: true,
+    default: ''
   },
   administrador: {
     type: String,
-    required: true
+    trim: true,
+    default: ''
   }
 }, {
   timestamps: true
 });
 
-module.exports = mongoose.model('Edificio', edificioSchema); 
+// Evitar la recompilación del modelo
+module.exports = mongoose.models.Edificio || mongoose.model('Edificio', edificioSchema); 

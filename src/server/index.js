@@ -4,6 +4,8 @@ const dotenv = require('dotenv');
 const path = require('path');
 const connectDB = require('./config/database');
 const mongoose = require('mongoose');
+const trabajosRoutes = require('./routes/trabajos');
+const edificiosRoutes = require('./routes/edificios');
 
 // Configurar variables de entorno
 dotenv.config();
@@ -50,8 +52,8 @@ connectDB().catch(err => {
 });
 
 // Rutas
-app.use('/api/trabajos', require('./routes/trabajos'));
-app.use('/api/edificios', require('./routes/edificios'));
+app.use('/api/trabajos', trabajosRoutes);
+app.use('/api/edificios', edificiosRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
