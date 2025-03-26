@@ -102,6 +102,7 @@ const edificiosSlice = createSlice({
     builder
       .addCase(fetchEdificios.pending, (state) => {
         state.status = 'loading';
+        state.error = null;
       })
       .addCase(fetchEdificios.fulfilled, (state, action) => {
         state.status = 'succeeded';
@@ -110,7 +111,7 @@ const edificiosSlice = createSlice({
       })
       .addCase(fetchEdificios.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload;
+        state.error = action.payload || 'Error al cargar los edificios';
       })
       .addCase(importarEdificios.pending, (state) => {
         state.status = 'loading';
@@ -162,7 +163,21 @@ const edificiosSlice = createSlice({
       .addCase(eliminarEdificio.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
-      });
+      })
+      .addMatcher(
+        (action) => action.type.endsWith('/fulfilled'),
+        (state) => {
+          state.status = 'succeeded';
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.endsWith('/rejected'),
+        (state, action) => {
+          state.status = 'failed';
+          state.error = action.payload || 'Error en la operación';
+        }
+      );
   }
 });
 

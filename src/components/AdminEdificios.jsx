@@ -2,7 +2,8 @@ import {
     Add as AddIcon,
     CloudDownload as CloudDownloadIcon,
     Delete as DeleteIcon,
-    Edit as EditIcon
+    Edit as EditIcon,
+    Search as SearchIcon
 } from '@mui/icons-material';
 import {
     Alert,
@@ -15,6 +16,7 @@ import {
     DialogContentText,
     DialogTitle,
     IconButton,
+    InputAdornment,
     Paper,
     Table,
     TableBody,
@@ -29,6 +31,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     actualizarEdificio,
+    clearError,
     crearEdificio,
     eliminarEdificio,
     fetchEdificios,
@@ -143,16 +146,30 @@ const AdminEdificios = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedEdificio, setSelectedEdificio] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (status === 'idle') {
       dispatch(fetchEdificios());
     }
+    return () => {
+      dispatch(clearError());
+    };
   }, [status, dispatch]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        dispatch(clearError());
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
   const handleImportar = async () => {
     try {
       setIsSubmitting(true);
+      dispatch(clearError());
       await dispatch(importarEdificios()).unwrap();
       await dispatch(fetchEdificios()).unwrap();
     } catch (error) {
@@ -215,6 +232,16 @@ const AdminEdificios = () => {
     }
   };
 
+  // Función para filtrar edificios
+  const edificiosFiltrados = edificios.filter(edificio => {
+    const searchTermLower = searchTerm.toLowerCase();
+    return (
+      edificio.direccion.toLowerCase().includes(searchTermLower) ||
+      edificio.administrador.toLowerCase().includes(searchTermLower) ||
+      edificio.cuit.includes(searchTerm)
+    );
+  });
+
   if (status === 'loading' || isSubmitting) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -258,6 +285,24 @@ const AdminEdificios = () => {
         </Box>
       </Box>
 
+      {/* Campo de búsqueda */}
+      <Box mb={3}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Buscar por dirección, administrador o CUIT..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -269,7 +314,7 @@ const AdminEdificios = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {edificios.map((edificio) => (
+            {edificiosFiltrados.map((edificio) => (
               <TableRow key={edificio._id}>
                 <TableCell>{edificio.direccion}</TableCell>
                 <TableCell>{edificio.cuit}</TableCell>
@@ -294,10 +339,10 @@ const AdminEdificios = () => {
                 </TableCell>
               </TableRow>
             ))}
-            {edificios.length === 0 && (
+            {edificiosFiltrados.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} align="center">
-                  No hay edificios registrados.
+                  {searchTerm ? 'No se encontraron edificios que coincidan con la búsqueda' : 'No hay edificios registrados'}
                 </TableCell>
               </TableRow>
             )}
