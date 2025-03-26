@@ -144,34 +144,63 @@ router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const sort = req.query.sort || 'desc';
     const edificio = req.query.edificio;
+    const facturaHecha = req.query.facturaHecha;
 
-    console.log('Parámetros de búsqueda recibidos:', {
-      page,
-      limit,
-      sort,
-      edificio
-    });
+    console.log('Parámetros de búsqueda:', { page, limit, sort, edificio, facturaHecha });
 
     const query = {};
     if (edificio) {
-      console.log('Aplicando filtro por edificio:', edificio);
       query.edificio = edificio;
     }
+    if (facturaHecha !== undefined) {
+      query.facturaHecha = facturaHecha === 'true';
+    }
 
-    console.log('Query final a MongoDB:', query);
+    console.log('Query final:', query);
 
-    const [trabajos, total] = await Promise.all([
-      Trabajo.find(query)
-        .sort({ fecha: sort })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
-      Trabajo.countDocuments(query)
+    const trabajos = await Trabajo.aggregate([
+      { $match: query },
+      {
+        $addFields: {
+          fechaParseada: {
+            $cond: {
+              if: { $regexMatch: { input: "$fecha", regex: /^\d{2}\/\d{2}\/\d{2}$/ } },
+              then: {
+                $dateFromString: {
+                  dateString: {
+                    $concat: [
+                      "20",
+                      { $substr: ["$fecha", 6, 2] },
+                      "-",
+                      { $substr: ["$fecha", 3, 2] },
+                      "-",
+                      { $substr: ["$fecha", 0, 2] }
+                    ]
+                  },
+                  onError: "$fecha"
+                }
+              },
+              else: {
+                $dateFromString: {
+                  dateString: "$fecha",
+                  onError: "$fecha"
+                }
+              }
+            }
+          }
+        }
+      },
+      { $sort: { fechaParseada: sort === 'desc' ? -1 : 1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+      { $project: { fechaParseada: 0 } }
     ]);
 
-    console.log(`Se encontraron ${trabajos.length} trabajos de un total de ${total} con el filtro aplicado`);
+    const total = await Trabajo.countDocuments(query);
+
+    console.log(`Se encontraron ${trabajos.length} trabajos de un total de ${total}`);
     if (trabajos.length > 0) {
-      console.log('Primer trabajo encontrado:', trabajos[0]);
+      console.log('Primera fecha encontrada:', trabajos[0].fecha);
     }
 
     const hasMore = page * limit < total;

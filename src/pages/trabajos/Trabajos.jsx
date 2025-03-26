@@ -13,9 +13,6 @@ import EdificioAutocomplete from '../../components/EdificioAutocomplete';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import TipoDestapacionAutocomplete from '../../components/TipoDestapacionAutocomplete';
 import axios from '../../config/axios';
-import { fetchEdificios } from '../../features/edificios/edificiosSlice';
-import { cargarTrabajos } from '../../features/trabajos/trabajosSlice';
-import AgregarTrabajo from './components/AgregarTrabajo';
 import {
     ActionButton,
     ActionButtons,
@@ -59,6 +56,7 @@ const Trabajos = () => {
   const dispatch = useDispatch();
   const [editingId, setEditingId] = useState(null);
   const [filtroEdificio, setFiltroEdificio] = useState(null);
+  const [filtroFacturaHecha, setFiltroFacturaHecha] = useState('todos');
   const [formData, setFormData] = useState({
     edificio: '',
     cuit: '',
@@ -87,38 +85,60 @@ const Trabajos = () => {
   const trabajosRedux = useSelector(state => state.trabajos?.trabajos || []);
 
   useEffect(() => {
-    dispatch(cargarTrabajos());
-    dispatch(fetchEdificios());
-  }, [dispatch]);
+    console.log('Carga inicial de trabajos');
+    fetchTrabajos(1, sortOrder);
+    cargarEdificios();
+  }, []); // Solo se ejecuta una vez al montar el componente
+
+  useEffect(() => {
+    if (page > 1) {
+      fetchTrabajos(page, sortOrder);
+    }
+  }, [page]);
+
+  useEffect(() => {
+    console.log('Filtro o orden cambiado:', { filtroEdificio, filtroFacturaHecha, sortOrder });
+    setPage(1);
+    fetchTrabajos(1, sortOrder, filtroEdificio, filtroFacturaHecha);
+  }, [filtroEdificio, filtroFacturaHecha, sortOrder]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setError('');
-      if (editingId) {
-        await axios.put(`/api/trabajos/${editingId}`, formData);
-      } else {
-        await axios.post('/api/trabajos', formData);
-      }
+      const nuevoTrabajo = {
+        edificio: formData.edificio?.direccion || '',
+        cuit: formData.cuit || '',
+        tipoDestapacion: formData.tipoDestapacion || '',
+        piso: formData.piso || '',
+        fecha: formData.fecha || '',
+        importe: parseFloat(formData.importe) || 0,
+        seFactura: true,
+        facturaHecha: false,
+        administrador: formData.administrador || '',
+      };
+
+      console.log('Enviando nuevo trabajo:', nuevoTrabajo);
+      
+      const response = await axios.post('/api/trabajos', nuevoTrabajo);
+      console.log('Trabajo creado:', response.data);
+      
+      // Limpiar el formulario
       setFormData({
         edificio: '',
         cuit: '',
         tipoDestapacion: '',
         piso: '',
-        fecha: format(new Date(), 'yyyy-MM-dd'),
+        fecha: '',
         importe: '',
-        administrador: '',
-        seFactura: false,
-        facturaHecha: false,
-        pagado: false,
-        nombreContacto: ''
+        administrador: ''
       });
-      setEdificioSeleccionado(null);
-      setEditingId(null);
-      await fetchTrabajos();
-    } catch (err) {
-      console.error('Error:', err);
-      setError('Error al guardar el trabajo');
+      
+      // Recargar la lista de trabajos
+      fetchTrabajos(1);
+      
+    } catch (error) {
+      console.error('Error al crear trabajo:', error);
+      setError('Error al crear el trabajo');
     }
   };
 
@@ -159,22 +179,21 @@ const Trabajos = () => {
   };
 
   const handleEdificioChange = (edificio) => {
+    console.log('Edificio seleccionado:', edificio);
     setEdificioSeleccionado(edificio);
-    if (edificio) {
-      setFormData(prev => ({
-        ...prev,
-        edificio: edificio.nombre,
-        cuit: edificio.cuit || '',
-        administrador: edificio.administrador || ''
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        edificio: '',
-        cuit: '',
-        administrador: ''
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      edificio: edificio,
+      cuit: edificio?.cuit || '',
+      administrador: edificio?.administrador || ''
+    }));
+  };
+
+  const handleTipoDestapacionChange = (newValue) => {
+    setFormData(prev => ({
+      ...prev,
+      tipoDestapacion: newValue
+    }));
   };
 
   const trabajosFiltrados = useMemo(() => {
@@ -190,7 +209,7 @@ const Trabajos = () => {
     fetchTrabajos(1, newOrder);
   };
 
-  const fetchTrabajos = async (pageNum = page, order = sortOrder, edificioFilter = filtroEdificio) => {
+  const fetchTrabajos = async (pageNum = page, order = sortOrder, edificioFilter = filtroEdificio, facturaHechaFilter = filtroFacturaHecha) => {
     try {
       setLoading(true);
       setError('');
@@ -206,15 +225,25 @@ const Trabajos = () => {
         params.edificio = edificioFilter.direccion;
       }
 
+      if (facturaHechaFilter !== 'todos') {
+        console.log('Aplicando filtro por factura hecha:', facturaHechaFilter);
+        params.facturaHecha = facturaHechaFilter === 'si';
+      }
+
       console.log('Solicitando trabajos con params:', params);
       
       const response = await axios.get('/api/trabajos', { params });
       console.log('Respuesta del servidor:', response.data);
       
+      const trabajosConFechasFormateadas = response.data.trabajos.map(trabajo => ({
+        ...trabajo,
+        fecha: trabajo.fecha.includes('/') ? trabajo.fecha : format(new Date(trabajo.fecha), 'dd/MM/yy')
+      }));
+      
       if (pageNum === 1) {
-        setTrabajos(response.data.trabajos);
+        setTrabajos(trabajosConFechasFormateadas);
       } else {
-        setTrabajos(prev => [...prev, ...response.data.trabajos]);
+        setTrabajos(prev => [...prev, ...trabajosConFechasFormateadas]);
       }
       
       setHasMore(response.data.pagination.hasMore);
@@ -243,18 +272,6 @@ const Trabajos = () => {
 
     return () => observer.disconnect();
   }, [hasMore, loading]);
-
-  // Cargar más trabajos cuando cambia la página
-  useEffect(() => {
-    if (page > 1) {
-      fetchTrabajos(page, sortOrder);
-    }
-  }, [page, sortOrder]);
-
-  // Cargar trabajos iniciales
-  useEffect(() => {
-    fetchTrabajos(1, sortOrder);
-  }, [sortOrder]);
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -300,15 +317,6 @@ const Trabajos = () => {
     }
   };
 
-  useEffect(() => {
-    cargarEdificios();
-  }, []);
-
-  useEffect(() => {
-    console.log('Filtro cambiado, recargando trabajos con filtro:', filtroEdificio);
-    fetchTrabajos(1, sortOrder, filtroEdificio);
-  }, [filtroEdificio, sortOrder]);
-
   const handleTrabajoAgregado = (nuevoTrabajo) => {
     setTrabajos(prev => [nuevoTrabajo, ...prev]);
   };
@@ -323,25 +331,6 @@ const Trabajos = () => {
           </IconButton>
         </Tooltip>
       </Box>
-
-      <FilterSection>
-        <FilterLabel>Filtrar por Edificio:</FilterLabel>
-        <AutocompleteContainer>
-          <EdificioAutocomplete
-            edificios={edificios}
-            value={filtroEdificio}
-            onChange={(edificio) => {
-              console.log('Seleccionando edificio para filtrar:', edificio);
-              setFiltroEdificio(edificio);
-              setPage(1);
-              fetchTrabajos(1, sortOrder, edificio ? { direccion: edificio.direccion } : null);
-            }}
-            placeholder="Buscar edificio..."
-            style={{ width: '100%', minWidth: '300px' }}
-            isFilter={true}
-          />
-        </AutocompleteContainer>
-      </FilterSection>
 
       <h3>Agregar Nuevo Trabajo</h3>
 
@@ -367,7 +356,7 @@ const Trabajos = () => {
         <AutocompleteContainer>
           <TipoDestapacionAutocomplete
             value={formData.tipoDestapacion}
-            onChange={(newValue) => setFormData(prev => ({ ...prev, tipoDestapacion: newValue }))}
+            onChange={handleTipoDestapacionChange}
           />
         </AutocompleteContainer>
 
@@ -410,6 +399,42 @@ const Trabajos = () => {
         </Button>
       </Form>
 
+      <h3>Lista de Trabajos</h3>
+
+      <FilterSection>
+        <FilterLabel>Filtrar por Edificio:</FilterLabel>
+        <AutocompleteContainer>
+          <EdificioAutocomplete
+            edificios={edificios}
+            value={filtroEdificio}
+            onChange={(edificio) => {
+              console.log('Seleccionando edificio para filtrar:', edificio);
+              setFiltroEdificio(edificio);
+              setPage(1);
+              fetchTrabajos(1, sortOrder, edificio ? { direccion: edificio.direccion } : null, filtroFacturaHecha);
+            }}
+            placeholder="Buscar edificio..."
+            style={{ width: '100%', minWidth: '300px' }}
+            isFilter={true}
+          />
+        </AutocompleteContainer>
+
+        <FilterLabel>Filtrar por Factura HECHA:</FilterLabel>
+        <Select
+          value={filtroFacturaHecha}
+          onChange={(e) => {
+            setFiltroFacturaHecha(e.target.value);
+            setPage(1);
+            fetchTrabajos(1, sortOrder, filtroEdificio, e.target.value);
+          }}
+          style={{ minWidth: '120px', marginLeft: '10px' }}
+        >
+          <option value="todos">Todos</option>
+          <option value="si">SI</option>
+          <option value="no">NO</option>
+        </Select>
+      </FilterSection>
+
       <Table>
         <thead>
           <TableRow>
@@ -434,8 +459,8 @@ const Trabajos = () => {
         </thead>
         <tbody>
           {trabajos.length > 0 ? (
-            trabajos.map((trabajo) => (
-              <TableRow key={trabajo._id}>
+            trabajos.map((trabajo, index) => (
+              <TableRow key={`${trabajo._id}-${index}`}>
                 <TableCell>{trabajo.edificio}</TableCell>
                 <TableCell>{trabajo.cuit}</TableCell>
                 <TableCell>{trabajo.tipoDestapacion}</TableCell>
@@ -493,8 +518,6 @@ const Trabajos = () => {
           {error}
         </div>
       )}
-
-      <AgregarTrabajo onTrabajoAgregado={handleTrabajoAgregado} />
     </Container>
   );
 };
