@@ -8,8 +8,8 @@ const trabajoSchema = new mongoose.Schema({
     },
     cuit: {
         type: String,
-        trim: true,
-        default: ''
+        default: '',
+        trim: true
     },
     tipoDestapacion: {
         type: String,
@@ -18,8 +18,8 @@ const trabajoSchema = new mongoose.Schema({
     },
     piso: {
         type: String,
-        trim: true,
-        default: ''
+        default: '',
+        trim: true
     },
     fecha: {
         type: String,
@@ -33,7 +33,7 @@ const trabajoSchema = new mongoose.Schema({
     },
     seFactura: {
         type: Boolean,
-        default: true // Siempre true ya que solo guardamos los que se facturan
+        default: true
     },
     facturaHecha: {
         type: Boolean,
@@ -45,13 +45,13 @@ const trabajoSchema = new mongoose.Schema({
     },
     administrador: {
         type: String,
-        trim: true,
-        default: ''
+        default: '',
+        trim: true
     },
     nombreContacto: {
         type: String,
-        trim: true,
-        default: ''
+        default: '',
+        trim: true
     }
 }, {
     timestamps: true
@@ -63,4 +63,4 @@ trabajoSchema.pre('save', function(next) {
     next();
 });
 
-module.exports = mongoose.model('Trabajo', trabajoSchema); 
+module.exports = mongoose.models.Trabajo || mongoose.model('Trabajo', trabajoSchema); 
