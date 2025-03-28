@@ -1,0 +1,12 @@
+[req]
+distinguished_name = req_distinguished_name
+prompt = no
+
+[req_distinguished_name]
+C = AR
+ST = Buenos Aires
+L = Ciudad Autonoma de Buenos Aires
+O = AFIP
+OU = Web Services
+CN = wsaa.afip.gov.ar
+emailAddress = german@email.com 

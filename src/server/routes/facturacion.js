@@ -1,14 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const facturacionService = require('../services/facturacionService');
-const afipService = require('../services/afipService');
+const AfipService = require('../services/afipService');
+const CuentaFacturacion = require('../models/CuentaFacturacion');
 
 // Ruta de prueba para verificar la conexión con AFIP
-router.get('/test-afip', async (req, res) => {
+router.get('/test-afip/:cuenta', async (req, res) => {
   console.log('Iniciando prueba de conexión con AFIP...');
   try {
-    console.log('Llamando a afipService.testConnection()...');
+    const { cuenta } = req.params;
+    console.log(`Probando conexión para cuenta: ${cuenta}`);
+    
+    const afipService = new AfipService(cuenta);
     const resultado = await afipService.testConnection();
+    
     console.log('Resultado de la prueba:', resultado);
     res.json(resultado);
   } catch (error) {
@@ -59,6 +64,65 @@ router.get('/estado', async (req, res) => {
   } catch (error) {
     console.error('Error en ruta /estado:', error);
     res.status(500).json({ error: 'Error al obtener estado de facturación' });
+  }
+});
+
+// Obtener todas las cuentas de facturación
+router.get('/cuentas', async (req, res) => {
+  try {
+    const cuentas = await CuentaFacturacion.find({ activa: true });
+    res.json(cuentas);
+  } catch (error) {
+    console.error('Error al obtener cuentas:', error);
+    res.status(500).json({ error: 'Error al obtener las cuentas de facturación' });
+  }
+});
+
+// Crear nueva cuenta de facturación
+router.post('/cuentas', async (req, res) => {
+  try {
+    const cuenta = new CuentaFacturacion(req.body);
+    await cuenta.save();
+    res.status(201).json(cuenta);
+  } catch (error) {
+    console.error('Error al crear cuenta:', error);
+    res.status(400).json({ error: 'Error al crear la cuenta de facturación' });
+  }
+});
+
+// Actualizar cuenta de facturación
+router.put('/cuentas/:id', async (req, res) => {
+  try {
+    const cuenta = await CuentaFacturacion.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!cuenta) {
+      return res.status(404).json({ error: 'Cuenta no encontrada' });
+    }
+    res.json(cuenta);
+  } catch (error) {
+    console.error('Error al actualizar cuenta:', error);
+    res.status(400).json({ error: 'Error al actualizar la cuenta de facturación' });
+  }
+});
+
+// Eliminar cuenta de facturación
+router.delete('/cuentas/:id', async (req, res) => {
+  try {
+    const cuenta = await CuentaFacturacion.findByIdAndUpdate(
+      req.params.id,
+      { activa: false },
+      { new: true }
+    );
+    if (!cuenta) {
+      return res.status(404).json({ error: 'Cuenta no encontrada' });
+    }
+    res.json({ message: 'Cuenta eliminada correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar cuenta:', error);
+    res.status(400).json({ error: 'Error al eliminar la cuenta de facturación' });
   }
 });
 

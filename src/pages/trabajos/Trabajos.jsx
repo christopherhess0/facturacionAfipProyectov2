@@ -1,8 +1,11 @@
+import { Settings as SettingsIcon } from '@mui/icons-material';
 import SyncIcon from '@mui/icons-material/Sync';
 import {
-  Box,
-  IconButton,
-  Tooltip
+    Fab,
+    IconButton,
+    MenuItem,
+    TextField,
+    Tooltip
 } from '@mui/material';
 import { format } from 'date-fns';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -11,24 +14,25 @@ import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import EdificioAutocomplete from '../../components/EdificioAutocomplete';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import TipoDestapacionAutocomplete from '../../components/TipoDestapacionAutocomplete';
 import axios from '../../config/axios';
 import {
-  ActionButton,
-  ActionButtons,
-  AutocompleteContainer,
-  Button,
-  Container,
-  FilterLabel,
-  FilterSection,
-  Form,
-  Input,
-  Select,
-  Table,
-  TableCell,
-  TableHeader,
-  TableRow,
-  Title
+    ActionButton,
+    ActionButtons,
+    AutocompleteContainer,
+    Button,
+    Container,
+    FilterLabel,
+    FilterSection,
+    Form,
+    FormSection,
+    SectionTitle,
+    Select,
+    SyncButton,
+    Table,
+    TableCell,
+    TableHeader,
+    TableRow,
+    Title
 } from './styles/Trabajos.styles';
 
 const StyledTableHeader = styled.th`
@@ -52,11 +56,58 @@ const StyledTableHeader = styled.th`
   }
 `;
 
+const ConfigButton = styled(Fab)`
+  && {
+    position: absolute;
+    left: -100px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 80px;
+    background-color: #2196f3 !important;
+    border-radius: 16px;
+    z-index: 9999;
+
+    &:hover {
+      background-color: #1976d2 !important;
+    }
+
+    svg {
+      width: 40px;
+      height: 40px;
+      fill: white;
+    }
+  }
+`;
+
+const StyledTooltip = styled(({ className, ...props }) => (
+  <Tooltip {...props} classes={{ popper: className }} />
+))`
+  & .MuiTooltip-tooltip {
+    background-color: rgba(33, 150, 243, 0.95);
+    color: white;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 300px;
+    text-align: center;
+    margin: 8px;
+    transition: all 0.2s ease;
+  }
+
+  & .MuiTooltip-arrow {
+    color: rgba(33, 150, 243, 0.95);
+  }
+`;
+
 const Trabajos = () => {
   const dispatch = useDispatch();
   const [editingId, setEditingId] = useState(null);
   const [filtroEdificio, setFiltroEdificio] = useState(null);
   const [filtroFacturaHecha, setFiltroFacturaHecha] = useState('todos');
+  const [configOpen, setConfigOpen] = useState(false);
   const [formData, setFormData] = useState({
     edificio: '',
     cuit: '',
@@ -356,102 +407,136 @@ const Trabajos = () => {
 
   return (
     <Container>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Title>Gestión de Trabajos de Destapación</Title>
-        <Tooltip title="Sincronizar con Google Sheets">
-          <IconButton onClick={handleSync} disabled={syncing}>
-            <SyncIcon sx={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
-          </IconButton>
-        </Tooltip>
-      </Box>
+      <Title>Gestión de Trabajos de Destapación</Title>
+      
+      <FormSection>
+        <StyledTooltip 
+          title="Presione este botón para entrar a la pestaña de configuración de facturación"
+          placement="right"
+          arrow
+          enterDelay={200}
+          leaveDelay={200}
+        >
+          <ConfigButton onClick={() => setConfigOpen(true)}>
+            <SettingsIcon />
+          </ConfigButton>
+        </StyledTooltip>
 
-      <h3>Agregar Nuevo Trabajo</h3>
+        <SectionTitle>Agregar Nuevo Trabajo</SectionTitle>
 
-      <Form onSubmit={handleSubmit}>
-        <AutocompleteContainer>
-          <EdificioAutocomplete
-            edificios={edificios}
-            value={edificioSeleccionado}
-            onChange={handleEdificioChange}
-            placeholder="Seleccione un edificio"
-            isFilter={false}
+        <Form onSubmit={handleSubmit}>
+          <TextField
+            select
+            label="Edificio"
+            value={edificioSeleccionado?.nombreEdificio}
+            onChange={(e) => {
+              const selectedEdificio = edificios.find(edificio => edificio.nombreEdificio === e.target.value);
+              if (selectedEdificio) {
+                handleEdificioChange(selectedEdificio);
+              }
+            }}
+            variant="outlined"
+          >
+            {edificios.map((option) => (
+              <MenuItem key={option.nombreEdificio} value={option.nombreEdificio}>
+                {option.nombreEdificio}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            label="CUIT"
+            value={formData.cuit}
+            onChange={(e) => setFormData(prev => ({ ...prev, cuit: e.target.value }))}
+            variant="outlined"
           />
-        </AutocompleteContainer>
 
-        <Input
-          type="text"
-          name="cuit"
-          value={formData.cuit}
-          readOnly
-          placeholder="CUIT"
-        />
-
-        <AutocompleteContainer>
-          <TipoDestapacionAutocomplete
+          <TextField
+            select
+            label="Tipo de Trabajo"
             value={formData.tipoDestapacion}
-            onChange={handleTipoDestapacionChange}
+            onChange={(e) => setFormData(prev => ({ ...prev, tipoDestapacion: e.target.value }))}
+            variant="outlined"
+          >
+            <MenuItem value="">Seleccione un tipo de trabajo</MenuItem>
+            <MenuItem value="Destapación">Destapación</MenuItem>
+            <MenuItem value="Reparación">Reparación</MenuItem>
+            <MenuItem value="Mantenimiento">Mantenimiento</MenuItem>
+          </TextField>
+
+          <TextField
+            label="Piso"
+            value={formData.piso}
+            onChange={(e) => setFormData(prev => ({ ...prev, piso: e.target.value }))}
+            variant="outlined"
           />
-        </AutocompleteContainer>
 
-        <Input
-          type="text"
-          name="piso"
-          value={formData.piso}
-          onChange={(e) => setFormData(prev => ({ ...prev, piso: e.target.value }))}
-          placeholder="Piso"
-          required
-        />
+          <TextField
+            type="date"
+            label="Fecha"
+            value={formData.fecha}
+            onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
+            variant="outlined"
+            InputLabelProps={{ shrink: true }}
+          />
 
-        <Input
-          type="date"
-          name="fecha"
-          value={formData.fecha}
-          onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
-          required
-        />
+          <TextField
+            label="Importe"
+            value={formData.importe}
+            onChange={(e) => setFormData(prev => ({ ...prev, importe: e.target.value }))}
+            variant="outlined"
+            type="number"
+          />
 
-        <Input
-          type="number"
-          name="importe"
-          value={formData.importe}
-          onChange={(e) => setFormData(prev => ({ ...prev, importe: e.target.value }))}
-          placeholder="Importe"
-          required
-        />
+          <TextField
+            label="Administrador"
+            value={formData.administrador}
+            onChange={(e) => setFormData(prev => ({ ...prev, administrador: e.target.value }))}
+            variant="outlined"
+          />
 
-        <Input
-          type="text"
-          name="administrador"
-          value={formData.administrador}
-          readOnly
-          placeholder="Administrador"
-        />
+          <Button 
+            type="submit"
+            variant="contained"
+            className="submit-button"
+            disabled={loading}
+          >
+            {loading ? 'Agregando...' : 'Agregar Trabajo'}
+          </Button>
+        </Form>
+      </FormSection>
 
-        <Button type="submit">
-          {editingId ? 'Actualizar Trabajo' : 'Agregar Trabajo'}
-        </Button>
-      </Form>
-
-      <h3>Lista de Trabajos</h3>
+      <SectionTitle>Lista de Trabajos</SectionTitle>
 
       <FilterSection>
-        <FilterLabel>Filtrar por Edificio:</FilterLabel>
-        <AutocompleteContainer>
-          <EdificioAutocomplete
-            edificios={edificios}
-            value={filtroEdificio}
-            onChange={(edificio) => {
-              console.log('Seleccionando edificio para filtrar:', edificio);
-              setFiltroEdificio(edificio);
-              setPage(1);
-              fetchTrabajos(1, sortOrder, edificio ? { direccion: edificio.direccion } : null, filtroFacturaHecha);
-            }}
-            placeholder="Buscar edificio..."
-            style={{ width: '100%', minWidth: '300px' }}
-            isFilter={true}
-          />
-        </AutocompleteContainer>
+        <div className="left-section">
+          <FilterLabel>Edificio:</FilterLabel>
+          <AutocompleteContainer>
+            <EdificioAutocomplete
+              edificios={edificios}
+              value={filtroEdificio}
+              onChange={(edificio) => {
+                console.log('Seleccionando edificio para filtrar:', edificio);
+                setFiltroEdificio(edificio);
+                setPage(1);
+                fetchTrabajos(1, sortOrder, edificio ? { direccion: edificio.direccion } : null, filtroFacturaHecha);
+              }}
+              placeholder="Filtrar por edificio"
+              isFilter={true}
+            />
+          </AutocompleteContainer>
+        </div>
+        
+        <SyncButton>
+          <Tooltip title="Sincronizar con Google Sheets">
+            <IconButton onClick={handleSync} disabled={syncing}>
+              <SyncIcon sx={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
+            </IconButton>
+          </Tooltip>
+        </SyncButton>
+      </FilterSection>
 
+      <FilterSection>
         <FilterLabel>Filtrar por Factura HECHA:</FilterLabel>
         <Select
           value={filtroFacturaHecha}
