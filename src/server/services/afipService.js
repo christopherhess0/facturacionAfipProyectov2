@@ -1,166 +1,105 @@
 const Afip = require('@afipsdk/afip.js');
 const path = require('path');
 const fs = require('fs');
+const cuentasAfip = require('../config/cuentasAfip');
 require('dotenv').config();
 
 class AfipService {
-  constructor() {
-    console.log('=== Iniciando construcción de AfipService ===');
+  constructor(cuentaId) {
+    const cuenta = cuentasAfip[cuentaId];
+    if (!cuenta) {
+      throw new Error(`Cuenta de AFIP no encontrada: ${cuentaId}`);
+    }
+    this.cuenta = cuenta;
+    this.afip = null;
+    this.initialized = false;
+  }
+
+  async initialize() {
+    if (this.initialized) return;
+
+    console.log(`Inicializando AFIP con CUIT: ${this.cuenta.cuit}`);
+    
+    const certPath = this.cuenta.certificado;
+    const keyPath = this.cuenta.clave;
+
+    console.log('Rutas de archivos:');
+    console.log('Certificado:', certPath);
+    console.log('Clave privada:', keyPath);
+
+    // Verificar que los archivos existan
+    if (!fs.existsSync(certPath)) {
+      throw new Error(`Certificado no encontrado en: ${certPath}`);
+    }
+    if (!fs.existsSync(keyPath)) {
+      throw new Error(`Clave privada no encontrada en: ${keyPath}`);
+    }
+
+    // Leer el contenido de los archivos
+    const certContent = fs.readFileSync(certPath, 'utf8').trim();
+    const keyContent = fs.readFileSync(keyPath, 'utf8').trim();
+
+    console.log('Contenido del certificado:');
+    console.log(certContent.substring(0, 100) + '...');
+    console.log('Contenido de la clave privada:');
+    console.log(keyContent.substring(0, 100) + '...');
+
+    if (!certContent.includes('-----BEGIN CERTIFICATE-----')) {
+      throw new Error('El archivo de certificado no es válido');
+    }
+    if (!keyContent.includes('-----BEGIN PRIVATE KEY-----')) {
+      throw new Error('El archivo de clave privada no es válido');
+    }
+
     try {
-      const CUIT = process.env.AFIP_CUIT;
-      console.log('Leyendo CUIT de variables de entorno:', CUIT);
-      console.log('Todas las variables de entorno:', {
-        MONGODB_URI: process.env.MONGODB_URI ? 'Configurado' : 'No configurado',
-        GOOGLE_SHEET_ID: process.env.GOOGLE_SHEET_ID ? 'Configurado' : 'No configurado',
-        AFIP_CUIT: process.env.AFIP_CUIT ? 'Configurado' : 'No configurado',
-        NODE_ENV: process.env.NODE_ENV
+      // Crear directorio temporal para los certificados si no existe
+      const tempCertDir = path.join(process.cwd(), 'temp_certs', this.cuenta.nombre.toLowerCase().replace(/\s+/g, '_'));
+      if (!fs.existsSync(tempCertDir)) {
+        fs.mkdirSync(tempCertDir, { recursive: true });
+      }
+
+      // Escribir los archivos temporales
+      const tempCertPath = path.join(tempCertDir, 'cert.pem');
+      const tempKeyPath = path.join(tempCertDir, 'key.pem');
+
+      fs.writeFileSync(tempCertPath, certContent);
+      fs.writeFileSync(tempKeyPath, keyContent);
+
+      this.afip = new Afip({
+        CUIT: this.cuenta.cuit,
+        cert: tempCertPath,
+        key: tempKeyPath,
+        production: false, // Usar ambiente de homologación
+        res_folder: tempCertDir,
+        ta_folder: tempCertDir,
+        wsdl_folder: tempCertDir
       });
-      
-      if (!CUIT) {
-        throw new Error('AFIP_CUIT no está configurado en las variables de entorno');
-      }
 
-      console.log('=== Verificando rutas de certificados ===');
-      const certPath = path.resolve(process.cwd(), 'certificates', 'cert.pem');
-      const keyPath = path.resolve(process.cwd(), 'certificates', 'key.pem');
-
-      console.log('Rutas absolutas de certificados:');
-      console.log('- Certificado:', certPath);
-      console.log('- Clave:', keyPath);
-      console.log('- Directorio actual:', process.cwd());
-
-      console.log('=== Verificando existencia de archivos ===');
-      if (!fs.existsSync(certPath)) {
-        console.error('Error: Certificado no encontrado');
-        console.log('Contenido del directorio certificates:', fs.readdirSync(path.resolve(process.cwd(), 'certificates')));
-        throw new Error(`No se encuentra el certificado en: ${certPath}`);
-      }
-
-      if (!fs.existsSync(keyPath)) {
-        console.error('Error: Clave privada no encontrada');
-        console.log('Contenido del directorio certificates:', fs.readdirSync(path.resolve(process.cwd(), 'certificates')));
-        throw new Error(`No se encuentra la clave privada en: ${keyPath}`);
-      }
-
-      console.log('=== Leyendo contenido de certificados ===');
-      const certContent = fs.readFileSync(certPath, 'utf8');
-      const keyContent = fs.readFileSync(keyPath, 'utf8');
-
-      console.log('Validando formato de certificado...');
-      if (!certContent.includes('BEGIN CERTIFICATE')) {
-        console.error('Error: Formato de certificado inválido');
-        console.log('Primeras líneas del certificado:', certContent.split('\n').slice(0, 3));
-        throw new Error('El archivo de certificado no parece ser válido');
-      }
-
-      console.log('Validando formato de clave privada...');
-      if (!keyContent.includes('BEGIN PRIVATE KEY')) {
-        console.error('Error: Formato de clave privada inválido');
-        console.log('Primeras líneas de la clave:', keyContent.split('\n').slice(0, 3));
-        throw new Error('El archivo de clave privada no parece ser válido');
-      }
-
-      console.log('=== Configurando carpeta de recursos ===');
-      const resFolderPath = path.resolve(process.cwd(), 'certificates');
-      console.log('Carpeta de recursos:', resFolderPath);
-
-      if (!fs.existsSync(resFolderPath)) {
-        console.log('Creando carpeta de recursos...');
-        fs.mkdirSync(resFolderPath, { recursive: true });
-      }
-
-      console.log('=== Creando instancia de AFIP ===');
-      const config = {
-        CUIT: CUIT,
-        cert: certPath,
-        key: keyPath,
-        production: false,
-        res_folder: resFolderPath,
-        ta_folder: resFolderPath
-      };
-      console.log('Configuración de AFIP:', JSON.stringify(config, null, 2));
-
-      try {
-        this.afip = new Afip(config);
-        console.log('Instancia de AFIP creada exitosamente');
-      } catch (error) {
-        console.error('Error al crear instancia de AFIP:', error);
-        console.error('Stack trace:', error.stack);
-        throw error;
-      }
-
+      this.initialized = true;
+      console.log(`AFIP inicializado correctamente para ${this.cuenta.nombre}`);
     } catch (error) {
-      console.error('=== ERROR EN CONSTRUCTOR ===');
-      console.error('Mensaje:', error.message);
-      console.error('Stack:', error.stack);
+      console.error('Error al inicializar AFIP:', error);
       throw error;
     }
   }
 
   async testConnection() {
     try {
-      console.log('=== Iniciando prueba de conexión con AFIP ===');
+      await this.initialize();
+      console.log('Probando conexión con AFIP...');
       
-      console.log('1. Intentando obtener estado del servidor...');
-      try {
-        const auth = await this.afip.ElectronicBilling.getServerStatus();
-        console.log('Estado del servidor recibido:', JSON.stringify(auth, null, 2));
-      } catch (error) {
-        console.error('Error al obtener estado del servidor:');
-        console.error('- Mensaje:', error.message);
-        console.error('- Respuesta:', error.response?.data);
-        console.error('- URL:', error.config?.url);
-        console.error('- Método:', error.config?.method);
-        throw error;
-      }
-
-      console.log('2. Intentando obtener último comprobante...');
-      console.log('Parámetros: Punto de venta = 1, Tipo de comprobante = 6');
-      let lastVoucher;
-      try {
-        lastVoucher = await this.afip.ElectronicBilling.getLastVoucher(1, 6);
-        console.log('Último comprobante recibido:', lastVoucher);
-      } catch (error) {
-        console.error('Error al obtener último comprobante:');
-        console.error('- Mensaje:', error.message);
-        console.error('- Respuesta:', error.response?.data);
-        console.error('- URL:', error.config?.url);
-        console.error('- Método:', error.config?.method);
-        throw error;
-      }
-
-      console.log('=== Prueba de conexión completada con éxito ===');
+      // Intentar obtener el último comprobante
+      const lastVoucher = await this.afip.ElectronicBilling.getLastVoucher(1, 1);
+      console.log('Último comprobante:', lastVoucher);
+      
       return {
         success: true,
         message: 'Conexión exitosa con AFIP',
-        serverStatus: auth,
         lastVoucher
       };
     } catch (error) {
-      console.error('=== ERROR EN TEST DE CONEXIÓN ===');
-      console.error('Tipo de error:', error.constructor.name);
-      console.error('Mensaje:', error.message);
-      console.error('Stack:', error.stack);
-      console.error('Detalles de la respuesta:', error.response?.data);
-      console.error('URL de la petición:', error.config?.url);
-      console.error('Método de la petición:', error.config?.method);
-      console.error('Headers de la petición:', error.config?.headers);
-      console.error('Datos enviados:', error.config?.data);
-      
-      return {
-        success: false,
-        message: 'Error al conectar con AFIP',
-        error: error.message,
-        details: {
-          errorType: error.constructor.name,
-          response: error.response?.data,
-          url: error.config?.url,
-          method: error.config?.method,
-          headers: error.config?.headers,
-          requestData: error.config?.data
-        },
-        stack: error.stack
-      };
+      console.error('Error al probar conexión:', error);
+      throw error;
     }
   }
 
@@ -227,4 +166,4 @@ class AfipService {
   }
 }
 
-module.exports = new AfipService(); 
+module.exports = AfipService; 

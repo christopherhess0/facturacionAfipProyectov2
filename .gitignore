@@ -62,6 +62,13 @@ Thumbs.db
 *.pfx
 *.cer
 *.crt
+*certificates_christopher*
+*certificates_german*
+*certificates_nicole*
+*german_open_ssl*
+*nicole_open_ssl*
+*christopher_open_ssl*
+*credentials.json
 
 # AFIP específico
 /certificates/**/*
@@ -81,3 +88,8 @@ Thumbs.db
 .next/
 out/
 .nuxt/
+
+# Certificados AFIP
+/certificates_christopher/
+/certificates_german/
+/certificates_*/

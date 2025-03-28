@@ -14,6 +14,7 @@ const mongoose = require('mongoose');
 const trabajosRoutes = require('./routes/trabajos');
 const edificiosRoutes = require('./routes/edificios');
 const facturacionRoutes = require('./routes/facturacion');
+const cuentaFacturacionService = require('./services/cuentaFacturacionService');
 
 // Middleware para manejar errores
 const errorHandler = (err, req, res, next) => {
@@ -81,27 +82,48 @@ app.get('/', (req, res) => {
 });
 
 // Ruta de health check
-app.get('/health', (req, res) => {
-    console.log('Verificando estado del servidor');
-    res.json({ 
-        status: 'ok',
-        mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-    });
+app.get('/health', async (req, res) => {
+    try {
+        const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+        res.json({
+            status: 'ok',
+            database: dbStatus,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
 });
 
 // Middleware de manejo de errores
 app.use(errorHandler);
 
+// Inicializar servicios
+async function initializeServices() {
+    try {
+        // Cargar cuentas de facturación
+        await cuentaFacturacionService.cargarCuentas();
+        console.log('Servicios inicializados correctamente');
+    } catch (error) {
+        console.error('Error al inicializar servicios:', error);
+        process.exit(1);
+    }
+}
+
 const PORT = process.env.PORT || 3001;
 const HOST = '0.0.0.0'; // Escuchar en todas las interfaces
 
 // Asegurarse de que el puerto esté libre antes de iniciar el servidor
-const server = app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, async () => {
     console.log(`Servidor corriendo en http://${HOST}:${PORT}`);
     console.log('Variables de entorno cargadas:');
     console.log('- MONGODB_URI:', process.env.MONGODB_URI ? 'Configurado' : 'No configurado');
     console.log('- GOOGLE_SHEET_ID:', process.env.GOOGLE_SHEET_ID ? 'Configurado' : 'No configurado');
     console.log('- AFIP_CUIT:', process.env.AFIP_CUIT ? 'Configurado' : 'No configurado');
+    await initializeServices();
 });
 
 server.on('error', (error) => {

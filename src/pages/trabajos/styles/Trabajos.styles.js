@@ -1,28 +1,125 @@
 import styled from 'styled-components';
 
 export const Container = styled.div`
-  padding: 20px;
+  padding: 2rem;
+  padding-left: 4rem;
+  position: relative;
+  overflow-x: hidden;
   max-width: 1400px;
   margin: 0 auto;
 `;
 
 export const Title = styled.h1`
   color: #1a237e;
-  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  font-size: 2rem;
   font-weight: 600;
-  text-align: left;
-  margin-bottom: 30px;
+  text-align: center;
 `;
 
 export const Form = styled.form`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
   background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-top: 1rem;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+
+  .submit-button {
+    grid-column: 1 / -1;
+    justify-self: end;
+    min-width: 200px;
+    height: 48px;
+    background: linear-gradient(45deg, #1976d2, #2196f3);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: linear-gradient(45deg, #1565c0, #1976d2);
+      box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+      transform: translateY(-1px);
+    }
+  }
+
+  .MuiTextField-root, .MuiFormControl-root {
+    width: 100%;
+
+    .MuiOutlinedInput-root {
+      background: #f8f9fa;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #fff;
+      }
+
+      &.Mui-focused {
+        background: #fff;
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+      }
+    }
+
+    .MuiInputLabel-root {
+      color: #546e7a;
+      
+      &.Mui-focused {
+        color: #1976d2;
+      }
+    }
+  }
+`;
+
+export const SectionTitle = styled.h3`
+  color: #1a237e;
+  margin: 2rem 0 1rem;
+  font-size: 2rem;
+  font-weight: 600;
+  text-align: center;
+  grid-column: 1 / -1;
+`;
+
+export const FormSection = styled.div`
+  position: relative;
+  margin-bottom: 2rem;
+  margin-left: 100px;
+`;
+
+export const SyncButton = styled.div`
+  .MuiIconButton-root {
+    color: #1976d2;
+    padding: 8px;
+    transition: all 0.3s ease;
+
+    svg {
+      font-size: 20px;
+    }
+
+    &:hover {
+      background-color: rgba(25, 118, 210, 0.1);
+      transform: rotate(180deg);
+    }
+
+    &:disabled {
+      color: #90a4ae;
+    }
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
 `;
 
 export const Input = styled.input`
@@ -155,6 +252,13 @@ export const FilterSection = styled.div`
   padding: 15px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  justify-content: space-between;
+
+  .left-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
 `;
 
 export const FilterLabel = styled.label`
